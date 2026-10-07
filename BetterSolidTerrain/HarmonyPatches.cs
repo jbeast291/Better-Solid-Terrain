@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Reflection.Emit;
 using HarmonyLib;
+using Nautilus.Extensions;
 using UnityEngine;
 using WorldStreaming;
 
@@ -51,40 +52,33 @@ internal static class HarmonyPatches
                 .InstructionEnumeration();
     }
 
+    
     internal static class ToggleChunkCollisionWithVisual {
-        [HarmonyPatch(typeof(ClipmapChunk), nameof(ClipmapChunk.FadeInTerrain))]
+        /// <summary> called when hidden by parent </summary>
+        [HarmonyPatch(typeof(ClipmapCell), nameof(ClipmapCell.FadeInMesh), typeof(object), typeof(object))]
         [HarmonyPostfix]
-        private static void FadeInTerrain(ClipmapChunk __instance) => ToggleCollision(__instance, true);
+        private static void FadeIn(object owner)
+            => ToggleCollision(((ClipmapCell) owner).chunk, true);
+        
+        [HarmonyPatch(typeof(ClipmapCell), nameof(ClipmapCell.FinalizeCollidersIfNecessary))]
+        [HarmonyPostfix]
+        private static void FinalizeCollidersIfNecessary(ClipmapChunk chunk)
+            => ToggleCollision(chunk, true);
+        
+        [HarmonyPatch(typeof(ClipmapCell), nameof(ClipmapCell.ShowMesh), typeof(object),
+            typeof(object))]
+        [HarmonyPostfix]
+        private static void Show(object owner)
+            => ToggleCollision(((ClipmapCell) owner).chunk, true);
 
-        [HarmonyPatch(typeof(ClipmapChunk), nameof(ClipmapChunk.FadeIn))]
+        [HarmonyPatch(typeof(ClipmapCell), nameof(ClipmapCell.HideMesh), typeof(object),
+            typeof(object))]
         [HarmonyPostfix]
-        private static void FadeIn(ClipmapChunk __instance) => ToggleCollision(__instance, true);
-
-        [HarmonyPatch(typeof(ClipmapChunk), nameof(ClipmapChunk.Show))]
-        [HarmonyPostfix]
-        private static void Show(ClipmapChunk __instance) => ToggleCollision(__instance, true);
-
-        [HarmonyPatch(typeof(ClipmapChunk), nameof(ClipmapChunk.ShowTerrain))]
-        [HarmonyPostfix]
-        private static void ShowTerrain(ClipmapChunk __instance) => ToggleCollision(__instance, true);
-
-        [HarmonyPatch(typeof(ClipmapChunk), nameof(ClipmapChunk.FadeOutTerrain))]
-        [HarmonyPostfix]
-        private static void FadeOutTerrain(ClipmapChunk __instance) => ToggleCollision(__instance, false);
-
-        [HarmonyPatch(typeof(ClipmapChunk), nameof(ClipmapChunk.FadeOut))]
-        [HarmonyPostfix]
-        private static void FadeOut(ClipmapChunk __instance) => ToggleCollision(__instance, false);
-
-        [HarmonyPatch(typeof(ClipmapChunk), nameof(ClipmapChunk.Hide), typeof(bool))]
-        [HarmonyPostfix]
-        private static void Hide(ClipmapChunk __instance) => ToggleCollision(__instance, false);
-
-        [HarmonyPatch(typeof(ClipmapChunk), nameof(ClipmapChunk.HideTerrain))]
-        [HarmonyPostfix]
-        private static void HideTerrain(ClipmapChunk __instance) => ToggleCollision(__instance, false);
+        private static void Hide(object owner)
+            => ToggleCollision(((ClipmapCell) owner).chunk, false);
 
         private static void ToggleCollision(ClipmapChunk chunk, bool value) {
+            if (!chunk.Exists()) return;
             MeshCollider collider = chunk.collision;
             if (collider == null) return;
             collider.gameObject.SetActive(value);

@@ -10,7 +10,7 @@ internal class Plugin : BaseUnityPlugin {
     private const string PLUGIN_GUID = "com.jbeast.betterSolidTerrain";
     private const string PLUGIN_NAME = "Better Solid Terrain";
     private const string PLUGIN_VERSION = "1.0.0";
-    private const bool ENABLE_DEBUG_COLLISION_VIEW = true;
+    private const bool ENABLE_DEBUG_COLLISION_VIEW = false;
 
     internal new static ManualLogSource Logger { get; private set; }
 
